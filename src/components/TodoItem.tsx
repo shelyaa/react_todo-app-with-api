@@ -10,6 +10,7 @@ interface TodoItemProps {
   loadingId: number | null;
   loading: boolean;
   setError: (errorType: ErrorType | null) => void;
+  fetchTodos: () => void;
 }
 
 export const TodoItem: React.FC<TodoItemProps> = ({
@@ -18,31 +19,32 @@ export const TodoItem: React.FC<TodoItemProps> = ({
   loadingId,
   loading,
   setError,
+  fetchTodos,
 }) => {
   const { id, completed, title } = todo;
   const [isChecked, setIsChecked] = useState(completed);
   const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
-    // Sync local state with prop change
     setIsChecked(completed);
   }, [completed]);
 
   const handleCheckboxChange = () => {
     const newCompletedState = !isChecked;
 
-    setIsChecked(newCompletedState); // Update local state immediately
+    setIsChecked(newCompletedState);
 
     setIsUpdating(true);
     updateTodo(id, { completed: newCompletedState })
       .then(updatedTodo => {
-        // If server response differs, correct the state
         if (updatedTodo.completed !== newCompletedState) {
           setIsChecked(updatedTodo.completed);
         }
+
+        fetchTodos();
       })
       .catch(() => {
-        setIsChecked(isChecked); // Revert to previous state on error
+        setIsChecked(isChecked);
         setError('update');
       })
       .finally(() => setIsUpdating(false));

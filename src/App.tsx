@@ -1,5 +1,3 @@
-/* eslint-disable jsx-a11y/label-has-associated-control */
-/* eslint-disable jsx-a11y/control-has-associated-label */
 import React, { useEffect, useRef, useState } from 'react';
 import { UserWarning } from './UserWarning';
 import { USER_ID, getTodos, createTodo, deleteTodo } from './api/todos';
@@ -33,13 +31,20 @@ export const App: React.FC = () => {
 
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
+  const fetchTodos = () => {
+    setLoading(true);
     getTodos()
       .then(setTodos)
       .catch(() => setError('load'))
-      .finally(() => setLoading(false));
-  }, []);
+      .finally(() => setLoading(false)); // Finish loading
+  };
 
+  // Only one useEffect to fetch todos on component mount
+  useEffect(() => {
+    fetchTodos();
+  }, []); // Empty dependency array ensures it runs once on mount
+
+  // Handle error notification timeout
   useEffect(() => {
     if (error) {
       const timer = setTimeout(() => {
@@ -48,8 +53,6 @@ export const App: React.FC = () => {
 
       return () => clearTimeout(timer);
     }
-
-    return undefined;
   }, [error]);
 
   if (!USER_ID) {
@@ -96,9 +99,7 @@ export const App: React.FC = () => {
         setTempTodo(null);
         setLoadingId(null);
       })
-      .finally(() => {
-        setLoading(false);
-      });
+      .finally(() => setLoading(false));
   };
 
   const handleDeleteTodo = (id: number) => {
@@ -115,9 +116,9 @@ export const App: React.FC = () => {
   };
 
   const handleClearCompleted = () => {
-    const completedTodo = todos.filter(todo => todo.completed);
+    const completedTodos = todos.filter(todo => todo.completed);
 
-    completedTodo.forEach(todo => {
+    completedTodos.forEach(todo => {
       deleteTodo(todo.id)
         .then(() => {
           setTodos(prevTodos => prevTodos.filter(t => t.id !== todo.id));
@@ -148,6 +149,7 @@ export const App: React.FC = () => {
           loadingId={loadingId}
           loading={loading}
           setError={setError}
+          fetchTodos={fetchTodos}
         />
 
         {tempTodo && (
@@ -158,6 +160,7 @@ export const App: React.FC = () => {
               loadingId={0}
               loading={true}
               setError={setError}
+              fetchTodos={fetchTodos}
             />
           </div>
         )}

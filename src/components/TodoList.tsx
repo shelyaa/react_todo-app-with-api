@@ -8,6 +8,7 @@ interface TodoListProps {
   handleDeleteTodo: (id: number) => void;
   loading: boolean;
   setError: (errorType: ErrorType | null) => void;
+  fetchTodos: () => void;
 }
 
 export const TodoList: React.FC<TodoListProps> = ({
@@ -15,6 +16,7 @@ export const TodoList: React.FC<TodoListProps> = ({
   loadingId,
   handleDeleteTodo,
   setError,
+  fetchTodos,
 }) => {
   return (
     <section className="todoapp__main" data-cy="TodoList">
@@ -22,6 +24,7 @@ export const TodoList: React.FC<TodoListProps> = ({
         <TodoItem
           key={todo.id}
           todo={todo}
+          fetchTodos={fetchTodos}
           handleDeleteTodo={handleDeleteTodo}
           loadingId={loadingId}
           loading={false}
