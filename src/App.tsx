@@ -1,6 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { UserWarning } from './UserWarning';
-import { USER_ID, getTodos, createTodo, deleteTodo } from './api/todos';
+import {
+  USER_ID,
+  getTodos,
+  createTodo,
+  deleteTodo,
+  updateTodo,
+} from './api/todos';
 import { Todo } from './types/Todo';
 import { TodoList } from './components/TodoList';
 import { Filter } from './types/Filter';
@@ -28,6 +34,8 @@ export const App: React.FC = () => {
   const [filter, setFilter] = useState<Filter>(Filter.all);
   const [inputText, setInputText] = useState('');
   const [tempTodo, setTempTodo] = useState<Todo | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [loadingIds, setLoadingIds] = useState<number[]>([]);
 
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -130,6 +138,31 @@ export const App: React.FC = () => {
     });
   };
 
+  const toggleAllTodos = () => {
+    setIsUpdating(true);
+
+    const allCompleted = todos.every(todo => todo.completed);
+    const todosToUpdate = allCompleted
+      ? todos
+      : todos.filter(todo => !todo.completed);
+
+    const idsToUpdate = todosToUpdate.map(todo => todo.id);
+
+    setLoadingIds(idsToUpdate);
+
+    Promise.all(
+      todosToUpdate.map(todo =>
+        updateTodo(todo.id, { completed: !allCompleted }),
+      ),
+    )
+      .then(fetchTodos)
+      .catch(() => setError('update'))
+      .finally(() => {
+        setIsUpdating(false);
+        setLoadingIds([]);
+      });
+  };
+
   return (
     <div className="todoapp">
       <h1 className="todoapp__title">todos</h1>
@@ -141,6 +174,8 @@ export const App: React.FC = () => {
           handleAddTodo={handleAddTodo}
           loading={loading || loadingId !== null}
           inputRef={inputRef}
+          toggleAllTodos={toggleAllTodos}
+          todos={todos}
         />
 
         <TodoList
@@ -150,6 +185,10 @@ export const App: React.FC = () => {
           loading={loading}
           setError={setError}
           fetchTodos={fetchTodos}
+          isUpdating={isUpdating}
+          setIsUpdating={setIsUpdating}
+          setLoadingId={setLoadingId}
+          loadingIds={loadingIds}
         />
 
         {tempTodo && (
@@ -161,6 +200,10 @@ export const App: React.FC = () => {
               loading={true}
               setError={setError}
               fetchTodos={fetchTodos}
+              isUpdating={isUpdating}
+              setIsUpdating={setIsUpdating}
+              setLoadingId={setLoadingId}
+              loadingIds={loadingIds}
             />
           </div>
         )}

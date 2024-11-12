@@ -11,6 +11,10 @@ interface TodoItemProps {
   loading: boolean;
   setError: (errorType: ErrorType | null) => void;
   fetchTodos: () => void;
+  setIsUpdating: (updating: boolean) => void;
+  isUpdating: boolean;
+  setLoadingId: (id: number | null) => void;
+  loadingIds: number[];
 }
 
 export const TodoItem: React.FC<TodoItemProps> = ({
@@ -20,10 +24,15 @@ export const TodoItem: React.FC<TodoItemProps> = ({
   loading,
   setError,
   fetchTodos,
+  setIsUpdating,
+  loadingIds,
+  setLoadingId,
 }) => {
   const { id, completed, title } = todo;
   const [isChecked, setIsChecked] = useState(completed);
-  const [isUpdating, setIsUpdating] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [newTitle, setNewTitle] = useState(title);
+  const [isLocalLoading, setIsLocalLoading] = useState(false);
 
   useEffect(() => {
     setIsChecked(completed);
@@ -33,8 +42,8 @@ export const TodoItem: React.FC<TodoItemProps> = ({
     const newCompletedState = !isChecked;
 
     setIsChecked(newCompletedState);
+    setLoadingId(id);
 
-    setIsUpdating(true);
     updateTodo(id, { completed: newCompletedState })
       .then(updatedTodo => {
         if (updatedTodo.completed !== newCompletedState) {
@@ -47,7 +56,53 @@ export const TodoItem: React.FC<TodoItemProps> = ({
         setIsChecked(isChecked);
         setError('update');
       })
-      .finally(() => setIsUpdating(false));
+      .finally(() => {
+        setIsUpdating(false);
+        setLoadingId(null);
+      });
+  };
+
+  const handleEditClick = () => {
+    setIsEditing(true);
+  };
+
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setNewTitle(event.target.value);
+  };
+
+  const handleSave = (event: React.FormEvent) => {
+    event.preventDefault();
+    const trimmedTitle = newTitle.trim();
+
+    if (trimmedTitle === '') {
+      handleDeleteTodo(id);
+
+      return;
+    }
+
+    setLoadingId(id);
+    setIsLocalLoading(true);
+
+    updateTodo(id, { title: trimmedTitle })
+      .then(() => {
+        setNewTitle(trimmedTitle);
+        setIsEditing(false);
+        fetchTodos();
+      })
+      .catch(() => {
+        setError('update');
+      })
+      .finally(() => {
+        setIsEditing(false);
+        setIsLocalLoading(false);
+        setLoadingId(null);
+      });
+  };
+
+  const handleKeyUp = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Escape') {
+      setIsEditing(false);
+    }
   };
 
   return (
@@ -69,22 +124,41 @@ export const TodoItem: React.FC<TodoItemProps> = ({
         />
       </label>
 
-      <span data-cy="TodoTitle" className="todo__title">
-        {title}
-      </span>
+      {isEditing ? (
+        <form onBlur={handleSave} onSubmit={handleSave}>
+          <input
+            data-cy="TodoTitleField"
+            type="text"
+            className="todo__title-field"
+            placeholder="Empty todo will be deleted"
+            value={newTitle}
+            autoFocus
+            onChange={handleInputChange}
+            onKeyUp={handleKeyUp}
+          />
+        </form>
+      ) : (
+        <>
+          <span
+            data-cy="TodoTitle"
+            className="todo__title"
+            onDoubleClick={handleEditClick}
+          >
+            {title}
+          </span>
 
-      {/* Remove button appears only on hover */}
-      <button
-        type="button"
-        className="todo__remove"
-        data-cy="TodoDelete"
-        onClick={() => handleDeleteTodo(id)}
-      >
-        ×
-      </button>
+          <button
+            type="button"
+            className="todo__remove"
+            data-cy="TodoDelete"
+            onClick={() => handleDeleteTodo(id)}
+          >
+            ×
+          </button>
+        </>
+      )}
 
-      {/* overlay will cover the todo while it is being deleted or updated */}
-      {(loadingId === id || isUpdating) && (
+      {(loadingId === id || isLocalLoading || loadingIds.includes(id)) && (
         <div data-cy="TodoLoader" className="modal overlay is-active">
           <div className="modal-background has-background-white-ter" />
           <div className="loader" />

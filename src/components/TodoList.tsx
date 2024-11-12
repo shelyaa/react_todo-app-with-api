@@ -9,6 +9,10 @@ interface TodoListProps {
   loading: boolean;
   setError: (errorType: ErrorType | null) => void;
   fetchTodos: () => void;
+  setIsUpdating: (updating: boolean) => void;
+  isUpdating: boolean;
+  setLoadingId: (id: number | null) => void;
+  loadingIds: number[];
 }
 
 export const TodoList: React.FC<TodoListProps> = ({
@@ -17,6 +21,10 @@ export const TodoList: React.FC<TodoListProps> = ({
   handleDeleteTodo,
   setError,
   fetchTodos,
+  isUpdating,
+  setIsUpdating,
+  setLoadingId,
+  loadingIds,
 }) => {
   return (
     <section className="todoapp__main" data-cy="TodoList">
@@ -29,6 +37,10 @@ export const TodoList: React.FC<TodoListProps> = ({
           loadingId={loadingId}
           loading={false}
           setError={setError}
+          isUpdating={isUpdating}
+          setIsUpdating={setIsUpdating}
+          setLoadingId={setLoadingId}
+          loadingIds={loadingIds}
         />
       ))}
     </section>

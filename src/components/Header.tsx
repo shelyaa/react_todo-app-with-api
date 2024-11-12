@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { Todo } from '../types/Todo';
 
 interface HeaderProps {
   inputText: string;
@@ -6,6 +7,8 @@ interface HeaderProps {
   handleAddTodo: (event: React.FormEvent<HTMLFormElement>) => void;
   loading: boolean;
   inputRef: React.RefObject<HTMLInputElement>;
+  toggleAllTodos: () => void;
+  todos: Todo[];
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -14,7 +17,11 @@ export const Header: React.FC<HeaderProps> = ({
   handleAddTodo,
   loading,
   inputRef,
+  toggleAllTodos,
+  todos,
 }) => {
+  const allCompleted = todos.every(todo => todo.completed);
+
   useEffect(() => {
     if (inputRef.current) {
       inputRef.current.focus();
@@ -24,11 +31,14 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="todoapp__header">
       {/* this button should have `active` class only if all todos are completed */}
-      <button
-        type="button"
-        className="todoapp__toggle-all active"
-        data-cy="ToggleAllButton"
-      />
+      {todos.length !== 0 && (
+        <button
+          type="button"
+          className={`todoapp__toggle-all ${allCompleted ? 'active' : ''}`}
+          data-cy="ToggleAllButton"
+          onClick={toggleAllTodos}
+        />
+      )}
 
       {/* Add a todo on form submit */}
       <form onSubmit={handleAddTodo}>
