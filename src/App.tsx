@@ -47,12 +47,10 @@ export const App: React.FC = () => {
       .finally(() => setLoading(false)); // Finish loading
   };
 
-  // Only one useEffect to fetch todos on component mount
   useEffect(() => {
     fetchTodos();
-  }, []); // Empty dependency array ensures it runs once on mount
+  }, []);
 
-  // Handle error notification timeout
   useEffect(() => {
     if (error) {
       const timer = setTimeout(() => {
@@ -61,6 +59,8 @@ export const App: React.FC = () => {
 
       return () => clearTimeout(timer);
     }
+
+    return undefined;
   }, [error]);
 
   if (!USER_ID) {
